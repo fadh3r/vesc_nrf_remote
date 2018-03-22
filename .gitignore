@@ -1,0 +1,14 @@
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+.travis.yml
+extra_script.py
+platformio.ini
+.code-workspace
+dox_and_utilites/
+.vscode/
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/*.db
+.vscode/.browse.c_cpp.db*
