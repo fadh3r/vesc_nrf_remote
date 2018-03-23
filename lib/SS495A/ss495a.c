@@ -4,7 +4,9 @@
 #include "SEGGER_RTT.h"
 
 
-//РЕШЕНИЕ: возможно continues mode не нужен, настроить по прерыванию таймера 10 раз в секунду
+//РЕШЕНИЕ: возможно continues mode отключить и настроить по прерыванию таймера раз в 100 милисекунд системным таймером
+//НАСТРОИТЬ: sConfig.SamplingTime в adc.c
+//НАСТРОИТЬ: PeriphClkInit.AdcClockSelection в main.c 
 //TODO: ЧИТАТЬ И ОПТИМИЗИРОВАТЬ https://community.st.com/thread/36558-adc-values-reading-with-dma
 //TODO: разобраться в ADC PRESCAILER
 //TODO: adc watchdog для аккума с прерыванием
