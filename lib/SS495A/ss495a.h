@@ -1,0 +1,1 @@
+void ss495a_init(void);

@@ -55,6 +55,18 @@
 #define PWR_Regulator_ON		((uint32_t)0x00000000)
 #define PWR_Regulator_LowPower	((uint32_t)0x00000001)
 
+
+
+//----------refactored--------------
+#include "ss495a.h"
+//----------end-of-refactored--------------
+
+
+
+
+
+
+
 // Datatypes
 typedef struct {
 	uint8_t js_x;
@@ -278,6 +290,8 @@ static uint32_t crc32c(uint8_t *data, uint32_t len) {
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart1;
 I2C_HandleTypeDef hi2c1;
+ADC_HandleTypeDef hadc1;
+
 /* Private variables ---------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -288,13 +302,12 @@ static void MX_USART1_UART_Init(void);
 
 
 
-
+ADC_Data = 0;
 
 
 
 
 int main(void) {
-
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
   /* Configure the system clock */
@@ -306,6 +319,11 @@ int main(void) {
   MX_I2C1_Init();
 //   MX_SPI1_Init();
 
+//----------refactored--------------
+ss495a_init();
+//----------end-of-refactored--------------
+
+
 
 SSD1306_Init();
 HAL_Delay(1000);
@@ -315,7 +333,6 @@ SSD1306_Puts("Hello! 12345AaBbCc", &Font_8x13, SSD1306_COLOR_WHITE); //пише�
 SSD1306_DrawCircle(120, 10, 7, SSD1306_COLOR_WHITE); //рисуем белую окружность в позиции 10;33 и радиусом 7 пикселей
 SSD1306_UpdateScreen();
 
-// HAL_Delay(1000);
 
 
 
@@ -644,9 +661,16 @@ bldc_interface_process_packet(rx_buffer, rxbuf_len);
 
 
 
-
-
-
+char hall_value_conv_buffer[30] = { 0 };
+itoa(ADC_Data* 100 / 4096, hall_value_conv_buffer, 10); // ADC_Data * 100 / 4096 при 12 битах всего 4096 вариантов %
+if(strlen(hall_value_conv_buffer) < 4) {
+	strcat(hall_value_conv_buffer, " ");
+}
+// SEGGER_RTT_printf(0, "%sadc values%s\n", RTT_CTRL_TEXT_BRIGHT_RED, RTT_CTRL_RESET);
+// SEGGER_RTT_printf(0, "%s\n", ADC_Data);
+SSD1306_GotoXY(20, 45); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
+SSD1306_Puts(hall_value_conv_buffer, &font_terminus_x20b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
+SSD1306_UpdateScreen();	
 
 
 
@@ -673,14 +697,18 @@ bldc_interface_process_packet(rx_buffer, rxbuf_len);
 
 
 
-
-
-void SystemClock_Config(void) {
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
 
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
-    /**Initializes the CPU, AHB and APB busses clocks
+    /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -705,11 +733,18 @@ void SystemClock_Config(void) {
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Configure the Systick interrupt time
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure the Systick interrupt time 
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
-    /**Configure the Systick
+    /**Configure the Systick 
     */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
@@ -727,7 +762,8 @@ void SystemClock_Config(void) {
   * @param  line: The line in file as a number.
   * @retval None
   */
-void _Error_Handler(char *file, int line) {
+void _Error_Handler(char *file, int line)
+{
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   while(1)
@@ -745,7 +781,7 @@ void _Error_Handler(char *file, int line) {
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line)
-{
+{ 
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

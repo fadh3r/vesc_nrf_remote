@@ -171,7 +171,7 @@ void bldc_interface_process_packet(unsigned char *data, unsigned int len) {
 
 		char conv_buffer[10];
 		values.v_in -= .2; //погрешность
-		gcvt(values.v_in, 5, conv_buffer);
+		gcvt(values.v_in, 4, conv_buffer);
 		if(strlen(conv_buffer) == 2) {
 			strcat(conv_buffer, ".0");
 		}
@@ -186,7 +186,7 @@ void bldc_interface_process_packet(unsigned char *data, unsigned int len) {
 		//
 		SSD1306_GotoXY(84, 31); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
 		SSD1306_Puts("v", &font_terminus_x18b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
-		SSD1306_UpdateScreen();	
+		// SSD1306_UpdateScreen();	
 
 		SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_RED"VOLTAGE: %s\n"RTT_CTRL_RESET, conv_buffer);
 
