@@ -304,7 +304,7 @@ static void MX_USART1_UART_Init(void);
 
 
 
-ADC_Data = 0;
+SS495_ADC_buffer = 0;
 
 
 
@@ -501,6 +501,7 @@ rf_pair_and_set();
 
 
 
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 
   int i = 0;
   uint8_t receiveBuffer[16] = { 0 };
@@ -515,11 +516,10 @@ rf_pair_and_set();
     // //http://forum.segger.com/index.php?page=Thread&threadID=2881
 
 
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-	
-    HAL_Delay(100);
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-    HAL_Delay(100);
+    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+    // HAL_Delay(100);
+    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+    // HAL_Delay(100);
     i+=1;
 
  
@@ -557,7 +557,7 @@ rf_pair_and_set();
 	// rf_tx_wrapper((char*)pl, index);
 
 
-	HAL_Delay(10);
+	HAL_Delay(13);
 
 
 
@@ -665,12 +665,12 @@ bldc_interface_process_packet(rx_buffer, rxbuf_len);
 
 
 char hall_value_conv_buffer[30] = { 0 };
-itoa(ADC_Data* 100 / 4096, hall_value_conv_buffer, 10); // ADC_Data * 100 / 4096 при 12 битах всего 4096 вариантов %
+itoa(SS495_ADC_buffer * 100 / 4096, hall_value_conv_buffer, 10); // SS495_ADC_buffer[512] * 100 / 4096 при 12 битах всего 4096 вариантов %
 if(strlen(hall_value_conv_buffer) < 4) {
 	strcat(hall_value_conv_buffer, " ");
 }
 // SEGGER_RTT_printf(0, "%sadc values%s\n", RTT_CTRL_TEXT_BRIGHT_RED, RTT_CTRL_RESET);
-// SEGGER_RTT_printf(0, "%s\n", ADC_Data);
+// SEGGER_RTT_printf(0, "%s\n", SS495_ADC_buffer[512]);
 SSD1306_GotoXY(20, 45); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
 SSD1306_Puts(hall_value_conv_buffer, &font_terminus_x20b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
 SSD1306_UpdateScreen();	
