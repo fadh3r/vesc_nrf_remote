@@ -1,8 +1,9 @@
 #include "adc.h"
 #include "dma.h"
+#include "tim.h"
 #include "stm32f1xx_hal.h"
 #include "SEGGER_RTT.h"
-
+#include "stm32f1xx_hal_adc.h"
 
 //РЕШЕНИЕ: возможно continues mode отключить и настроить по прерыванию таймера раз в 100 милисекунд системным таймером
 //НАСТРОИТЬ: sConfig.SamplingTime в adc.c
@@ -16,12 +17,20 @@ extern volatile uint32_t ADC_Data;  //сделать 16битной
 
 
 void ss495a_init() {
+    MX_TIM3_Init();
     MX_ADC1_Init();
     HAL_ADCEx_Calibration_Start(&hadc1);
     HAL_ADC_Start_DMA(&hadc1, (uint32_t*) &ADC_Data, 1);
-    // ADC_ResetCalibration(ADC1); // Reset previous calibration
-    // while(ADC_GetResetCalibrationStatus(ADC1));
-    // ADC_StartCalibration(ADC1); // Start new calibration (ADC must be off at that time)
-    // while(ADC_GetCalibrationStatus(ADC1));
+    HAL_TIM_Base_Start_IT(&htim3);
 }
 
+// void start_ss495a_adc_conversion(void) {
+//     HAL_ADC_Start_IT(&hadc1);
+// }
+
+/* вызывает по завершению конверсии start_ss495a_adc_conversion - написать сюда отправку триггера в VESC??? */
+// void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1) {
+//     if (hadc1->Instance==ADC1) {
+//     // HAL_ADC_Stop_DMA(&hadc1);
+//     }
+// }

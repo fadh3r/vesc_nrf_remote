@@ -34,7 +34,8 @@
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx.h"
 #include "stm32f1xx_it.h"
-
+#include "ss495a.h"
+#include "gpio.h"
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
@@ -42,6 +43,7 @@
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
 extern DMA_HandleTypeDef hdma_i2c1_tx;
+extern TIM_HandleTypeDef htim4;
 
 /******************************************************************************/
 /*            Cortex-M3 Processor Interruption and Exception Handlers         */ 
