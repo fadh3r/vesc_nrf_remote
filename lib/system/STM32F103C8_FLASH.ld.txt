@@ -1,0 +1,1 @@
+cp STM32F103C8_FLASH.ld ~/.platformio/packages/framework-stm32cube/platformio/ldscripts/STM32F103C8_FLASH.ld

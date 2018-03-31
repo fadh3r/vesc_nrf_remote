@@ -5,9 +5,11 @@
 .travis.yml
 extra_script.py
 platformio.ini
+src/STM32F103C8_FLASH.ld.txt
 .code-workspace
 dox_and_utilites/
 lib/readme.txt
+.code-workspace
 .vscode/
 .vscode/c_cpp_properties.json
 .vscode/launch.json

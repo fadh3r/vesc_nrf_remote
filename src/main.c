@@ -14,6 +14,9 @@
 #include "ssd1306.h"
 #include "fonts.h"
 
+#include "stm32f1xx_it.h"
+
+
 #include "datatypes.h"
 #include "bldc_interface.h"
 #include "conf_general.h"
@@ -309,6 +312,7 @@ SS495_ADC_buffer = 0;
 
 
 
+
 int main(void) {
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
@@ -523,24 +527,8 @@ rf_pair_and_set();
     i+=1;
 
  
-//   SSD1306_GotoXY(5, 20); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
-//   SSD1306_Puts(receiveBuffer, &Font_8x13, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
-//   SSD1306_UpdateScreen();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//HARDWARE-SPI-NRF
+//http://www.edaboard.com/showthread.php?t=275093
 
 
 	uint8_t pl[6];

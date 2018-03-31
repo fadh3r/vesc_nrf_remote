@@ -10,6 +10,7 @@ extern volatile uint32_t SS495_ADC_buffer;  //сделать 16битной
 
 
 void ss495a_init() {
+    
     MX_TIM3_Init();
     MX_ADC1_Init();
     HAL_ADCEx_Calibration_Start(&hadc1);
@@ -24,3 +25,4 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1) {
     }
     
 }
+

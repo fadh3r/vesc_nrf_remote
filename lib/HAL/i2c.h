@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : TIM.h
+  * File Name          : I2C.h
   * Description        : This file provides code for the configuration
-  *                      of the TIM instances.
+  *                      of the I2C instances.
   ******************************************************************************
   ** This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -37,21 +37,21 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __tim_H
-#define __tim_H
+#ifndef __i2c_H
+#define __i2c_H
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-#include "main.h"
+// #include "main.h"
 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
-extern TIM_HandleTypeDef htim3;
+extern I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN Private defines */
 
@@ -59,7 +59,7 @@ extern TIM_HandleTypeDef htim3;
 
 extern void _Error_Handler(char *, int);
 
-void MX_TIM3_Init(void);
+void MX_I2C1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -68,7 +68,7 @@ void MX_TIM3_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ tim_H */
+#endif /*__ i2c_H */
 
 /**
   * @}
