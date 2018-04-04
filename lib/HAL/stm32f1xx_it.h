@@ -5,12 +5,10 @@
   extern "C" {
   #endif 
 
-  #include "stm32f1xx_hal.h"
-  #include "main.h"
+  // #include "stm32f1xx_hal.h"
+  // #include "main.h"
 
-  extern DMA_HandleTypeDef hdma_adc1;
-  extern DMA_HandleTypeDef hdma_i2c1_tx;
-  extern TIM_HandleTypeDef htim3;
+
 
   void NMI_Handler(void);
   void HardFault_Handler(void);

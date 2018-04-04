@@ -22,6 +22,10 @@
  */
 
 #include "ssd1306.h"
+#include "stdint.h"
+#include "i2c.h"
+
+
 
 /* Write command */
 #define SSD1306_WRITECOMMAND(command)      ssd1306_I2C_Write(SSD1306_I2C_ADDR, 0x00, (command))
@@ -47,6 +51,7 @@ static SSD1306_t SSD1306;
 uint8_t SSD1306_Init(void) {
 
 	/* Check if LCD connected to I2C */
+	
 	if (HAL_I2C_IsDeviceReady(&hi2c1, SSD1306_I2C_ADDR, 1, 20000) != HAL_OK) {
 		/* Return false */
 		return 0;

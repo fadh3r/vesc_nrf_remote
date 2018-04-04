@@ -101,7 +101,7 @@ extern FontDef_t Font_4x6;
 
 extern FontDef_t font_terminus_x12b;
 extern FontDef_t font_terminus_x14b;
-extern FontDef_t font_terminus_x16b;
+// extern FontDef_t font_terminus_x16b;
 extern FontDef_t font_terminus_x18b;
 extern FontDef_t font_terminus_x20b;
 extern FontDef_t font_terminus_x22b;

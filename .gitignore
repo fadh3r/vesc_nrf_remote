@@ -6,6 +6,7 @@
 extra_script.py
 platformio.ini
 src/STM32F103C8_FLASH.ld.txt
+vscode_workspace_remote.code-workspace
 .code-workspace
 dox_and_utilites/
 lib/readme.txt

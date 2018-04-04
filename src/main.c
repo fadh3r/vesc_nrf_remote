@@ -1,5 +1,7 @@
 //MCU STM32 page -> http://www.st.com/en/microcontrollers/stm32f103c8.html
 #include "main.h"
+#include "ss495a.h"
+
 #include "stm32f1xx_hal.h" //подключает весь пакет HAL
 #include <stdio.h>
 #include <string.h>
@@ -15,6 +17,8 @@
 #include "fonts.h"
 
 #include "stm32f1xx_it.h"
+#include "init.h"
+#include "icons.h"
 
 
 #include "datatypes.h"
@@ -104,17 +108,6 @@ typedef enum {
 
 
 
-// Variables
-// static mutex_t print_mutex;
-// static mutex_t read_mutex;
-// static THD_WORKING_AREA(rx_thread_wa, 256);
-// static THD_WORKING_AREA(tx_thread_wa, 256);
-// static THD_WORKING_AREA(packet_process_thread_wa, 256);
-// static adcsample_t adc_samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
-// static systime_t alive_timestamp = 0;
-// static thread_t *rx_tp;
-// static thread_t *tx_tp;
-// static thread_t *process_tp;
 static bool rx_thd_is_waiting = false;
 static bool tx_thd_is_waiting = false;
 static bool rx_now = false;
@@ -292,58 +285,48 @@ static uint32_t crc32c(uint8_t *data, uint32_t len) {
 //http://vedder.se/forums/viewtopic.php?f=6&t=248&sid=4975f8e1079a2108e1944f30dfafb2bb&start=10
 
 
-/* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart1;
-I2C_HandleTypeDef hi2c1;
-ADC_HandleTypeDef hadc1;
-
-/* Private variables ---------------------------------------------------------*/
-
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
 static void MX_USART1_UART_Init(void);
 /* Private function prototypes -----------------------------------------------*/
 
 
+volatile uint32_t SS495_ADC_buffer = 0;;  //сделать 16битной
 
 
-SS495_ADC_buffer = 0;
+
+
+void startup_logo() {
+	SSD1306_Fill(SSD1306_COLOR_BLACK);
+	ssd1306_image(open_source_logo, 0, 0, 1);
+	SSD1306_DrawRectangle(0, 0, 128, 64, SSD1306_COLOR_WHITE);
+
+	SSD1306_GotoXY(20, 48);
+	SSD1306_Puts("open", &font_terminus_x14b, SSD1306_COLOR_WHITE); 
+	SSD1306_GotoXY(61, 48);
+	SSD1306_Puts("source", &font_terminus_x14b, SSD1306_COLOR_WHITE); 
+	SSD1306_UpdateScreen();
+
+	HAL_Delay(500);
+
+	SSD1306_GotoXY(8, 48);
+	SSD1306_Puts("  initiative  ", &font_terminus_x14b, SSD1306_COLOR_WHITE); 
+	SSD1306_UpdateScreen();
+	HAL_Delay(500);
+	SSD1306_Fill(SSD1306_COLOR_BLACK);
+}
 
 
 
 
 
 int main(void) {
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-  /* Configure the system clock */
-  SystemClock_Config();
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_USART1_UART_Init();
-  MX_I2C1_Init();
-//   MX_SPI1_Init();
-
-//----------refactored--------------
-ss495a_init();
-//----------end-of-refactored--------------
+	stm32_peripherals_init();
+	remote_peripherals_init();
 
 
 
-SSD1306_Init();
-HAL_Delay(1000);
-
-SSD1306_GotoXY(0, 6); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
-SSD1306_Puts("Hello! 12345AaBbCc", &Font_8x13, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
-SSD1306_DrawCircle(120, 10, 7, SSD1306_COLOR_WHITE); //рисуем белую окружность в позиции 10;33 и радиусом 7 пикселей
-SSD1306_UpdateScreen();
-
-
-
-
-
-
+startup_logo();
 
 
 void send_buffer_nrf(unsigned char *data, unsigned int len) {
@@ -657,18 +640,12 @@ itoa(SS495_ADC_buffer * 100 / 4096, hall_value_conv_buffer, 10); // SS495_ADC_bu
 if(strlen(hall_value_conv_buffer) < 4) {
 	strcat(hall_value_conv_buffer, " ");
 }
-// SEGGER_RTT_printf(0, "%sadc values%s\n", RTT_CTRL_TEXT_BRIGHT_RED, RTT_CTRL_RESET);
-// SEGGER_RTT_printf(0, "%s\n", SS495_ADC_buffer[512]);
+SEGGER_RTT_printf(0, "%sadc values%s\n", RTT_CTRL_TEXT_BRIGHT_RED, RTT_CTRL_RESET);
+SEGGER_RTT_printf(0, "%s\n", SS495_ADC_buffer);
+
 SSD1306_GotoXY(20, 45); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
 SSD1306_Puts(hall_value_conv_buffer, &font_terminus_x20b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
 SSD1306_UpdateScreen();	
-
-
-
-
-
-
-
 
 
 
@@ -684,84 +661,16 @@ SSD1306_UpdateScreen();
 }//end-of-main()
 
 
-
-
-
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_PeriphCLKInitTypeDef PeriphClkInit;
-
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Configure the Systick interrupt time 
-    */
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
-
-    /**Configure the Systick 
-    */
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-  /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-}
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
 /**
   * @brief  This function is executed in case of error occurrence.
   * @param  file: The file name as string.
   * @param  line: The line in file as a number.
   * @retval None
   */
-void _Error_Handler(char *file, int line)
-{
+void _Error_Handler(char *file, int line) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  while(1)
-  {
-  }
+  while(1) { }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -781,13 +690,3 @@ void assert_failed(uint8_t* file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

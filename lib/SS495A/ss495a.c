@@ -4,13 +4,10 @@
 #include "stm32f1xx_hal.h"
 #include "SEGGER_RTT.h"
 #include "stm32f1xx_hal_adc.h"
-
-extern volatile uint32_t SS495_ADC_buffer;  //сделать 16битной
-
+#include "ss495a.h"
 
 
 void ss495a_init() {
-    
     MX_TIM3_Init();
     MX_ADC1_Init();
     HAL_ADCEx_Calibration_Start(&hadc1);
@@ -21,6 +18,7 @@ void ss495a_init() {
 /* вызывается по завершению конверсии ADC по прерыванию или оконачанию передачи DMA -> написать сюда отправку значения в VESC??? */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1) {
     if (hadc1->Instance==ADC1) {
+        // HAL_TIM_Base_Start(&htim3);
         return;
     }
     
