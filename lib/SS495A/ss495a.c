@@ -19,7 +19,7 @@ void ss495a_init() {
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc1) {
     if (hadc1->Instance==ADC1) {
         // HAL_TIM_Base_Start(&htim3);
-        return;
+        return 1;
     }
     
 }

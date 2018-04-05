@@ -83,8 +83,6 @@ int rfhelp_send_data(char *data, int len, bool ack) {
 	int timeout = 60;
 	int retval = -1;
 
-	// chMtxLock(&rf_mutex);
-
 	rf_mode_tx();
 	rf_clear_irq();
 	rf_flush_all();
@@ -103,7 +101,6 @@ int rfhelp_send_data(char *data, int len, bool ack) {
 	for(;;) {
 		int s = rf_status();
 
-		// chThdSleepMilliseconds(1);
 		HAL_Delay(1);
 		timeout--;
 
@@ -333,26 +330,20 @@ int rfhelp_read_rx_data_crc_noack(char *data, int *len, int *pipe) {
 }
 
 int rfhelp_rf_status(void) {
-	// chMtxLock(&rf_mutex);
 	int s = rf_status();
-	// chMtxUnlock(&rf_mutex);
-
 	return s;
 }
 
 void rfhelp_set_tx_addr(const char *addr, int addr_len) {
-	// chMtxLock(&rf_mutex);
 	memcpy(tx_addr, addr, addr_len);
 	address_length = addr_len;
 
 	tx_pipe0_addr_eq = memcmp(rx_addr[0], tx_addr, address_length) == 0;
 
 	rf_set_tx_addr(tx_addr, address_length);
-	// chMtxUnlock(&rf_mutex);
 }
 
 void rfhelp_set_rx_addr(int pipe, const char *addr, int addr_len) {
-	// chMtxLock(&rf_mutex);
 	memcpy(rx_addr[pipe], addr, addr_len);
 	address_length = addr_len;
 
@@ -360,25 +351,18 @@ void rfhelp_set_rx_addr(int pipe, const char *addr, int addr_len) {
 	rx_addr_set[pipe] = true;
 
 	rf_set_rx_addr(pipe, addr, address_length);
-	// chMtxUnlock(&rf_mutex);
 }
 
 void rfhelp_set_radio_channel(unsigned char channel) {
-	// chMtxLock(&rf_mutex);
 	int f = channel;
 	radio_freq = f + 2400;
 	rf_set_frequency(radio_freq);
-	// chMtxUnlock(&rf_mutex);
 }
 
 void rfhelp_power_down(void) {
-	// chMtxLock(&rf_mutex);
 	rf_power_down();
-	// chMtxUnlock(&rf_mutex);
 }
 
 void rfhelp_power_up(void) {
-	// chMtxLock(&rf_mutex);
 	rf_power_up();
-	// chMtxUnlock(&rf_mutex);
 }

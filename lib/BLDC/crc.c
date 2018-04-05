@@ -58,3 +58,19 @@ unsigned short crc16(unsigned char *buf, unsigned int len) {
 	}
 	return cksum;
 }
+
+uint32_t crc32c(uint8_t *data, uint32_t len) {
+	uint32_t crc = 0xFFFFFFFF;
+
+	for (uint32_t i = 0; i < len;i++) {
+		uint32_t byte = data[i];
+		crc = crc ^ byte;
+
+		for (int j = 7;j >= 0;j--) {
+			uint32_t mask = -(crc & 1);
+			crc = (crc >> 1) ^ (0x82F63B78 & mask);
+		}
+	}
+
+	return ~crc;
+}

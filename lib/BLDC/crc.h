@@ -20,9 +20,11 @@
 #ifndef CRC_H_
 #define CRC_H_
 
-/*
- * Functions
- */
-unsigned short crc16(unsigned char *buf, unsigned int len);
+    #include "stdint.h"
+    /*
+    * Functions
+    */
+    unsigned short crc16(unsigned char *buf, unsigned int len);
+    uint32_t crc32c(uint8_t *data, uint32_t len);
 
 #endif /* CRC_H_ */

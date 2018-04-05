@@ -1,5 +1,11 @@
-//MCU STM32 page -> http://www.st.com/en/microcontrollers/stm32f103c8.html
 #include "main.h"
+#include "pairing.h"
+#include "refactoring.h"
+
+
+
+
+
 #include "ss495a.h"
 
 #include "stm32f1xx_hal.h" //подключает весь пакет HAL
@@ -35,13 +41,7 @@
 #include "packet.h"
 #include "crc.h"
 #include <stdarg.h>
-/**
- * The STM32 factory-programmed UUID memory.
- * Three values of 32 bits each starting at this address
- * Use like this: STM32_UUID[0], STM32_UUID[1], STM32_UUID[2]
- */
-#define STM32_UUID ((uint32_t *)0x1FFFF7E8)
-#define STM32_UUID_8 ((uint8_t *)0x1FFFF7E8)
+
 
 #define ALIVE_TIMEOUT_MS		10000
 
@@ -54,7 +54,6 @@
 #define PRINT_NRF_STATS			1    // Print NRF packet stats
 #define TX_DISABLE_TIME			200  // Disable the chuck packets for this time when the uart bridge is used
 #define RX_ENABLE_TIME			200  // Keep RX on for at least this time when the uart bridge is used
-#define NRF_RESTART_TIMEOUT		500  // Restart the NRF if nothing has been received or acked for this time
 
 // Don't use ack on tx (requires the same setting on the vesc too)
 #define NOACK					0
@@ -76,35 +75,6 @@
 
 
 
-// Datatypes
-typedef struct {
-	uint8_t js_x;
-	uint8_t js_y;
-	bool bt_c;
-	bool bt_z;
-	bool bt_push;
-	float vin;
-	float vbat;
-} mote_state;
-
-typedef struct {
-	uint32_t req_values;
-	uint32_t res_values;
-	uint32_t tx_ok;
-	uint32_t tx_max_rt;
-	uint32_t tx_timeout;
-} nrf_stats_t;
-
-typedef enum {
-	MOTE_PACKET_BATT_LEVEL = 0,
-	MOTE_PACKET_BUTTONS,
-	MOTE_PACKET_ALIVE,
-	MOTE_PACKET_FILL_RX_BUFFER,
-	MOTE_PACKET_FILL_RX_BUFFER_LONG,
-	MOTE_PACKET_PROCESS_RX_BUFFER,
-	MOTE_PACKET_PROCESS_SHORT_BUFFER,
-	MOTE_PACKET_PAIRING_INFO
-} MOTE_PACKET;
 
 
 
@@ -117,30 +87,22 @@ static int serial_rx_read_pos = 0;
 static int serial_rx_write_pos = 0;
 static int tx_disable_time = 0;
 static int rx_enable_time = 0;
-static nrf_stats_t nrf_stats;
-static int nrf_restart_rx_time = 0;
-static int nrf_restart_tx_time = 0;
-static char radio_address[3];
-static unsigned char radio_channel;
-static const char radio_address_pairing[3] = {0xC6, 0xC5, 0};
-static const unsigned char radio_channel_pairing = 124;
+
+
+
 
 // Functions
-void printf_thd(const char* format, ...);
 static void print_rf_status(void);
-static int rf_tx_wrapper(char *data, int len);
-static void read_mote_state(mote_state *data);
-static void send_buffer_nrf(unsigned char *data, unsigned int len);
-static uint32_t crc32c(uint8_t *data, uint32_t len);
 
+static void send_buffer_nrf(unsigned char *data, unsigned int len);
 
 
 
 print_rf_current_address() {
-	SEGGER_RTT_printf(0, "Address0: %d\n", radio_address[0]);
-	SEGGER_RTT_printf(0, "Address1: %d\n", radio_address[1]);
-	SEGGER_RTT_printf(0, "Address2: %d\n",radio_address[2]);
-	SEGGER_RTT_printf(0, "Channel: %d\n", radio_channel);
+	// SEGGER_RTT_printf(0, "Address0: %d\n", radio_address[0]);
+	// SEGGER_RTT_printf(0, "Address1: %d\n", radio_address[1]);
+	// SEGGER_RTT_printf(0, "Address2: %d\n",radio_address[2]);
+	// SEGGER_RTT_printf(0, "Channel: %d\n", radio_channel);
 	// SEGGER_RTT_printf(0, "STM32_UUID Address0: %d\n", radio_address[0]);
     // SEGGER_RTT_printf(0, "STM32_UUID Address1: %d\n", radio_address[1]);
     // SEGGER_RTT_printf(0, "STM32_UUID Address2: %d\n",radio_address[2]);
@@ -174,24 +136,7 @@ static void print_rf_status(void) {
 	
 }
 
-static int rf_tx_wrapper(char *data, int len) {
-#if NOACK
-	int res = rfhelp_send_data_crc_noack(data, len, TX_RESENDS);
-#else
-	int res = rfhelp_send_data_crc(data, len);
-#endif
 
-	if (res == 0) {
-		nrf_stats.tx_ok++;
-		nrf_restart_tx_time = NRF_RESTART_TIMEOUT;
-	} else if (res == -1) {
-		nrf_stats.tx_max_rt++;
-	} else if (res == -2) {
-		nrf_stats.tx_timeout++;
-	}
-
-	return res;
-}
 
 
 
@@ -211,21 +156,7 @@ static void send_packet(unsigned char *data, unsigned int len) {
 
 
 
-static uint32_t crc32c(uint8_t *data, uint32_t len) {
-	uint32_t crc = 0xFFFFFFFF;
 
-	for (uint32_t i = 0; i < len;i++) {
-		uint32_t byte = data[i];
-		crc = crc ^ byte;
-
-		for (int j = 7;j >= 0;j--) {
-			uint32_t mask = -(crc & 1);
-			crc = (crc >> 1) ^ (0x82F63B78 & mask);
-		}
-	}
-
-	return ~crc;
-}
 
 
 //DISPLAY-DOX-PART-START
@@ -295,7 +226,6 @@ volatile uint32_t SS495_ADC_buffer = 0;;  //сделать 16битной
 
 
 
-
 void startup_logo() {
 	SSD1306_Fill(SSD1306_COLOR_BLACK);
 	ssd1306_image(open_source_logo, 0, 0, 1);
@@ -319,21 +249,18 @@ void startup_logo() {
 
 
 
-
 int main(void) {
 	stm32_peripherals_init();
 	remote_peripherals_init();
 
 
 
-startup_logo();
+// startup_logo();
 
 
 void send_buffer_nrf(unsigned char *data, unsigned int len) {
 	uint8_t send_buffer[MAX_PL_LEN];
 
-	// tx_disable_time = TX_DISABLE_TIME;
-	// rx_enable_time = RX_ENABLE_TIME;
 
 	if (data[0] == COMM_GET_VALUES) {
 		nrf_stats.req_values++;
@@ -419,31 +346,6 @@ void send_buffer_nrf(unsigned char *data, unsigned int len) {
 
 
 
-	
-	// Set RF address and channel based on the hashed UUID,
-	// The reason for hashing is than only a few numbers in the UUID seem to be
-	// updated between different chips:
-	// http://false.ekta.is/2012/06/stm32-device-electronic-signature-unique-device-id-register/
-	uint32_t h = crc32c(STM32_UUID_8, 12);
-
-    radio_address[0] = h & 0xFF;
-    radio_address[1] = (h >> 8) & 0xFF;
-    radio_address[2] = (h >> 16) & 0xFF;
-    radio_channel = (h >> 24) & 0x7F;
-
-    if (radio_channel <= 5) {
-    	radio_channel += 5;
-    }
-
-    if (radio_channel >= 120) {
-    	radio_channel -= 10;
-    }
-
-
-
-	rfhelp_set_rx_addr(0, radio_address, 3);
-	rfhelp_set_tx_addr(radio_address, 3);
-	rfhelp_set_radio_channel(radio_channel);
 
 
 
@@ -457,32 +359,7 @@ void send_buffer_nrf(unsigned char *data, unsigned int len) {
 	
 
 
-void rf_pair_and_set() {
-				// Send out pairing information
-				rfhelp_set_rx_addr(0, radio_address_pairing, 3);
-				rfhelp_set_tx_addr(radio_address_pairing, 3);
-				rfhelp_set_radio_channel(radio_channel_pairing);
 
-				uint8_t pl[6];
-				int32_t index = 0;
-				pl[index++] = MOTE_PACKET_PAIRING_INFO;
-				pl[index++] = (uint8_t)radio_address[0];
-				pl[index++] = (uint8_t)radio_address[1];
-				pl[index++] = (uint8_t)radio_address[2];
-				pl[index++] = radio_channel;
-
-				rfhelp_power_up();
-				HAL_Delay(2);
-				rf_tx_wrapper((char*)pl, index);
-
-				rfhelp_set_rx_addr(0, radio_address, 3);
-				rfhelp_set_tx_addr(radio_address, 3);
-				rfhelp_set_radio_channel(radio_channel);
-
-		HAL_Delay(5);
-
-	print_rf_status();
-}
 
 rf_pair_and_set();
 
