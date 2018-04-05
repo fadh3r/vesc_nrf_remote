@@ -1,5 +1,5 @@
-#ifndef __pairing_H
-#define __pairing_H
+#ifndef __mote_display_H
+#define __mote_display_H
 
     #include "stdint.h"
 
@@ -7,10 +7,10 @@
         extern "C" {
     #endif
 
-    void rf_pair_and_set(void);
+    void show_startup_logo(void);
 
     #ifdef __cplusplus
         }
     #endif
 
-#endif /* __pairing_H */
+#endif /* __mote_display_H */

@@ -1,12 +1,13 @@
 #include "main.h"
-#include "pairing.h"
 #include "refactoring.h"
-
-
-
-
-
+//----------refactored--------------
 #include "ss495a.h"
+#include "pairing.h"
+#include "mote_display.h"
+#include "debug_feedback.h"
+
+//----------end-of-refactored--------------
+
 
 #include "stm32f1xx_hal.h" //подключает весь пакет HAL
 #include <stdio.h>
@@ -19,12 +20,13 @@
 #include "i2c.h"
 #include "dma.h"
 #include "tim.h"
+
 #include "ssd1306.h"
 #include "fonts.h"
+#include "icons.h"
 
 #include "stm32f1xx_it.h"
 #include "init.h"
-#include "icons.h"
 
 
 #include "datatypes.h"
@@ -43,98 +45,20 @@
 #include <stdarg.h>
 
 
-#define ALIVE_TIMEOUT_MS		10000
-
 #define MAX_PL_LEN				25
 #define RX_BUFFER_SIZE			PACKET_MAX_PL_LEN
-#define SERIAL_RX_BUFFER_SIZE	1024
-
-#define USE_PRINTF				1    // 0 = off, 1 = direct, 2 = BLDC Tool
-#define PRINT_MAIN				0    // Print some stats
-#define PRINT_NRF_STATS			1    // Print NRF packet stats
-#define TX_DISABLE_TIME			200  // Disable the chuck packets for this time when the uart bridge is used
-#define RX_ENABLE_TIME			200  // Keep RX on for at least this time when the uart bridge is used
 
 // Don't use ack on tx (requires the same setting on the vesc too)
 #define NOACK					0
-#define TX_RESENDS				1
 
-#define CR_DS_MASK				((uint32_t)0xFFFFFFFC)
-#define PWR_Regulator_ON		((uint32_t)0x00000000)
-#define PWR_Regulator_LowPower	((uint32_t)0x00000001)
-
-
-
-//----------refactored--------------
-#include "ss495a.h"
-//----------end-of-refactored--------------
-
-
-
-
-
-
-
-
-
-
-static bool rx_thd_is_waiting = false;
-static bool tx_thd_is_waiting = false;
-static bool rx_now = false;
 static uint8_t rx_buffer[RX_BUFFER_SIZE];
-static uint8_t serial_rx_buffer[SERIAL_RX_BUFFER_SIZE];
-static int serial_rx_read_pos = 0;
-static int serial_rx_write_pos = 0;
-static int tx_disable_time = 0;
-static int rx_enable_time = 0;
-
 
 
 
 // Functions
-static void print_rf_status(void);
-
 static void send_buffer_nrf(unsigned char *data, unsigned int len);
 
 
-
-print_rf_current_address() {
-	// SEGGER_RTT_printf(0, "Address0: %d\n", radio_address[0]);
-	// SEGGER_RTT_printf(0, "Address1: %d\n", radio_address[1]);
-	// SEGGER_RTT_printf(0, "Address2: %d\n",radio_address[2]);
-	// SEGGER_RTT_printf(0, "Channel: %d\n", radio_channel);
-	// SEGGER_RTT_printf(0, "STM32_UUID Address0: %d\n", radio_address[0]);
-    // SEGGER_RTT_printf(0, "STM32_UUID Address1: %d\n", radio_address[1]);
-    // SEGGER_RTT_printf(0, "STM32_UUID Address2: %d\n",radio_address[2]);
-    // SEGGER_RTT_printf(0, "STM32_UUID Channel: %d\n", radio_channel);
-}
-
-print_rf_stats() {
-	SEGGER_RTT_printf(0, "%sreq_values:%s  %d\n", RTT_CTRL_TEXT_BRIGHT_YELLOW, RTT_CTRL_TEXT_BRIGHT_GREEN, nrf_stats.req_values);
-	SEGGER_RTT_printf(0, "%sres_values:%s  %d\n", RTT_CTRL_TEXT_BRIGHT_YELLOW, RTT_CTRL_TEXT_BRIGHT_GREEN, nrf_stats.res_values);
-	SEGGER_RTT_printf(0, RTT_CTRL_RESET);
-	char conv_buf[10];
-	gcvt(((float)nrf_stats.res_values / (float)nrf_stats.req_values) * 100.0, 3, conv_buf);
-	SEGGER_RTT_printf(0, "%sVal succ:%s %s%%\n", RTT_CTRL_RESET, RTT_CTRL_TEXT_BRIGHT_GREEN, conv_buf);
-	SEGGER_RTT_printf(0, RTT_CTRL_RESET);
-	SEGGER_RTT_printf(0, "TX OK:    %d\n", nrf_stats.tx_ok);
-	SEGGER_RTT_printf(0, "TX M_RT:  %d\n", nrf_stats.tx_max_rt);
-	SEGGER_RTT_printf(0, "TX T_O:   %d\n", nrf_stats.tx_timeout);
-	SEGGER_RTT_printf(0, "TX succ:  %.2f %%\n", ((float)nrf_stats.tx_ok / (float)(nrf_stats.tx_ok + nrf_stats.tx_max_rt + nrf_stats.tx_timeout)) * 100.0);
-}
-
-static void print_rf_status(void) {
-	int s = rf_status();
-
-	SEGGER_RTT_printf(0, "%s", "\nRF Status Register\r\n");
-	SEGGER_RTT_printf(0, "%s", "RX_DR  TX_DS  MAX_RT  RX_P_NO  TX_FULL\r\n");
-	SEGGER_RTT_printf(0, "%d         ", NRF_STATUS_GET_RX_DR(s));
-	SEGGER_RTT_printf(0, "%d        ", NRF_STATUS_GET_TX_DS(s));
-	SEGGER_RTT_printf(0, "%d       ", NRF_STATUS_GET_MAX_RT(s));
-	SEGGER_RTT_printf(0, "%d       ", NRF_STATUS_GET_RX_P_NO(s));
-	SEGGER_RTT_printf(0, "%d\n", NRF_STATUS_GET_TX_FULL(s));
-	
-}
 
 
 
@@ -226,25 +150,6 @@ volatile uint32_t SS495_ADC_buffer = 0;;  //сделать 16битной
 
 
 
-void startup_logo() {
-	SSD1306_Fill(SSD1306_COLOR_BLACK);
-	ssd1306_image(open_source_logo, 0, 0, 1);
-	SSD1306_DrawRectangle(0, 0, 128, 64, SSD1306_COLOR_WHITE);
-
-	SSD1306_GotoXY(20, 48);
-	SSD1306_Puts("open", &font_terminus_x14b, SSD1306_COLOR_WHITE); 
-	SSD1306_GotoXY(61, 48);
-	SSD1306_Puts("source", &font_terminus_x14b, SSD1306_COLOR_WHITE); 
-	SSD1306_UpdateScreen();
-
-	HAL_Delay(500);
-
-	SSD1306_GotoXY(8, 48);
-	SSD1306_Puts("  initiative  ", &font_terminus_x14b, SSD1306_COLOR_WHITE); 
-	SSD1306_UpdateScreen();
-	HAL_Delay(500);
-	SSD1306_Fill(SSD1306_COLOR_BLACK);
-}
 
 
 
@@ -331,11 +236,6 @@ void send_buffer_nrf(unsigned char *data, unsigned int len) {
 
 
 
-
-
-
-
-
 	// Packet interface
 	packet_init(send_packet, send_buffer_nrf, 0);
 	
@@ -344,31 +244,20 @@ void send_buffer_nrf(unsigned char *data, unsigned int len) {
 	rfhelp_init();
 	print_rf_status();
 
-
-
-
-
-
-
-
 	// Restart radio
 	HAL_Delay(5);
 	rfhelp_power_up();
 	HAL_Delay(1);
 	rfhelp_restart();
-	
+
+	rf_pair_and_set();
 
 
-
-
-rf_pair_and_set();
-
-
-
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 
   int i = 0;
   uint8_t receiveBuffer[16] = { 0 };
+
+
   while (1) {
 
     // HAL_UART_Receive(&huart1, receiveBuffer, 16, 1024);
@@ -379,11 +268,6 @@ rf_pair_and_set();
     // SEGGER_RTT_printf(0, "%d\r\n", i);
     // //http://forum.segger.com/index.php?page=Thread&threadID=2881
 
-
-    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-    // HAL_Delay(100);
-    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-    // HAL_Delay(100);
     i+=1;
 
  
@@ -405,14 +289,14 @@ rf_pair_and_set();
 	// rf_tx_wrapper((char*)pl, index);
 
 
-	HAL_Delay(13);
-
-
+	HAL_Delay(12);
 
 		char buf[32];
 		int len;
 		int p;
 		int ind;
+
+
 
 		for(;;) {
 #if NOACK
@@ -501,9 +385,6 @@ bldc_interface_process_packet(rx_buffer, rxbuf_len);
 		}
 
 	// HAL_Delay(10);
-
-
-
 
 
 

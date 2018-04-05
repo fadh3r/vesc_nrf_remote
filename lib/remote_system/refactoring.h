@@ -4,10 +4,6 @@
 
 #define NRF_RESTART_TIMEOUT		500  // Restart the NRF if nothing has been received or acked for this time
 
-
-
-
-
 typedef struct {
 	uint32_t req_values;
 	uint32_t res_values;
@@ -30,7 +26,5 @@ typedef enum {
 extern nrf_stats_t nrf_stats;
 extern int nrf_restart_rx_time;
 extern int nrf_restart_tx_time;
-
-
 
 int rf_tx_wrapper(char *data, int len);
