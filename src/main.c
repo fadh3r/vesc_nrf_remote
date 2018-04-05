@@ -59,13 +59,6 @@ static uint8_t rx_buffer[RX_BUFFER_SIZE];
 static void send_buffer_nrf(unsigned char *data, unsigned int len);
 
 
-
-
-
-
-
-
-
 static void send_packet(unsigned char *data, unsigned int len) {
 	// Wait for the previous transmission to finish.
 	// while (UARTD1.txstate == UART_TX_ACTIVE) {
@@ -75,69 +68,6 @@ static void send_packet(unsigned char *data, unsigned int len) {
 	// uartStartSend(&UARTD1, len, data);
 }
 
-
-
-
-
-
-
-
-
-//DISPLAY-DOX-PART-START
-//https://fontforge.github.io/en-US/documentation/
-
-
-//BITMAP-FONTS
-//https://thenextweb.com/dd/2012/01/31/get-your-bitmap-on-with-these-11-surprisingly-good-pixel-typefaces/
-//https://github.com/Tecate/bitmap-fonts
-//http://www.webdesigndev.com/pixel-fonts-bitmap-fonts/
-
-
-
-//NRF-NA-RUSSKOM
-//http://blog.sci-smart.ru/2013/06/nrf24l01.html
-//https://github.com/wendlers/libemb/tree/master/libnrf24l01
-//https://github.com/nt4t/Chibios-STM32F103-nRF24l01-spi-server-sb
-//http://www.cyberforum.ru/arm/thread2091410.html
-//https://github.com/petoknm/NRF24L01
-//https://github.com/LonelyWolf/stm32/tree/master/nrf24l01
-
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//https://github.com/vedderb/nrf24l01plus_stm32f100_chibios
-//https://github.com/vedderb/nrf24l01plus_stm32f100_chibios
-//https://github.com/vedderb/nrf24l01plus_stm32f100_chibios
-
-
-
-
-
-//https://github.com/FortAwesome/Font-Awesome/tree/master/advanced-options/raw-svg/brands
-
-
-//https://habrahabr.ru/post/313490/
-//https://github.com/SL-RU/sdmplayer/tree/master/src/v002/Hardware
-
-//https://bitbucket.org/nadyrshin_ryu/ssd1306_stm32/src
-
-//https://github.com/galpavlin/STM32-SSD1306/tree/master/128x64
-
-
-//http://forum.easyelectronics.ru/viewtopic.php?f=35&t=14117
-
-//DISPLAY-DOX-PART-END
-
-
-
-// JLinkRTTLogger -device STM32F103C8 -RTTChannel 0 -if swd -speed 4000 /dev/stdout
-// dont forget copy linker script from cubemx to
-//cp .platfromio/packages/framework-stm32cube/platformio/ldscripts/STM32F103CI_FLASH.ld
-
-
-
-//http://www.electric-skateboard.builders/t/vesc-nunchuk-rf/588/30
-//https://github.com/vedderb/nunchuk_mod
-//http://www.electric-skateboard.builders/t/vesc-nunchuk-rf/588/147
-//http://vedder.se/forums/viewtopic.php?f=6&t=248&sid=4975f8e1079a2108e1944f30dfafb2bb&start=10
 
 
 UART_HandleTypeDef huart1;
@@ -154,18 +84,11 @@ volatile uint32_t SS495_ADC_buffer = 0;;  //сделать 16битной
 
 
 
-int main(void) {
-	stm32_peripherals_init();
-	remote_peripherals_init();
 
-
-
-// startup_logo();
 
 
 void send_buffer_nrf(unsigned char *data, unsigned int len) {
 	uint8_t send_buffer[MAX_PL_LEN];
-
 
 	if (data[0] == COMM_GET_VALUES) {
 		nrf_stats.req_values++;
@@ -236,67 +159,12 @@ void send_buffer_nrf(unsigned char *data, unsigned int len) {
 
 
 
-	// Packet interface
-	packet_init(send_packet, send_buffer_nrf, 0);
-	
-	// NRF
-	rf_init();
-	rfhelp_init();
-	print_rf_status();
-
-	// Restart radio
-	HAL_Delay(5);
-	rfhelp_power_up();
-	HAL_Delay(1);
-	rfhelp_restart();
-
-	rf_pair_and_set();
-
-
-
-  int i = 0;
-  uint8_t receiveBuffer[16] = { 0 };
-
-
-  while (1) {
-
-    // HAL_UART_Receive(&huart1, receiveBuffer, 16, 1024);
-    // HAL_UART_Transmit(&huart1, "hello\n", 6, 1024);
-
-    // SEGGER_RTT_WriteString(0, receiveBuffer);
-    // SEGGER_RTT_WriteString(0, "\n");
-    // SEGGER_RTT_printf(0, "%d\r\n", i);
-    // //http://forum.segger.com/index.php?page=Thread&threadID=2881
-
-    i+=1;
-
- 
-//HARDWARE-SPI-NRF
-//http://www.edaboard.com/showthread.php?t=275093
-
-
-	uint8_t pl[6];
-	int32_t index = 0;
-	pl[index++] = COMM_GET_VALUES;
-	send_buffer_nrf(pl, index);
-
-	// index = 0;
-	// pl[index++] = MOTE_PACKET_PROCESS_SHORT_BUFFER;
-	// pl[index++] = COMM_GET_VALUES;
-
-	// rfhelp_power_up();
-	// HAL_Delay(2);
-	// rf_tx_wrapper((char*)pl, index);
-
-
-	HAL_Delay(12);
+void rx_thread(void) {
 
 		char buf[32];
 		int len;
 		int p;
 		int ind;
-
-
 
 		for(;;) {
 #if NOACK
@@ -384,7 +252,71 @@ bldc_interface_process_packet(rx_buffer, rxbuf_len);
 			}
 		}
 
-	// HAL_Delay(10);
+}
+
+
+
+
+int main(void) {
+    stm32_peripherals_init();
+    remote_peripherals_init();
+    // show_startup_logo();
+
+	// Packet interface
+	// packet_init(send_packet, send_buffer_nrf, 0);
+	
+	// NRF
+	rf_init();
+	rfhelp_init();
+	print_rf_status();
+
+	// Restart radio
+	HAL_Delay(5);
+	rfhelp_power_up();
+	HAL_Delay(1);
+	rfhelp_restart();
+
+	rf_pair_and_set();
+
+
+
+  uint8_t receiveBuffer[16] = { 0 };
+
+
+  while (1) {
+
+    // HAL_UART_Receive(&huart1, receiveBuffer, 16, 1024);
+    // HAL_UART_Transmit(&huart1, "hello\n", 6, 1024);
+
+    // SEGGER_RTT_WriteString(0, receiveBuffer);
+    // SEGGER_RTT_WriteString(0, "\n");
+    // SEGGER_RTT_printf(0, "%d\r\n", i);
+    // //http://forum.segger.com/index.php?page=Thread&threadID=2881
+
+
+ 
+//HARDWARE-SPI-NRF
+//http://www.edaboard.com/showthread.php?t=275093
+
+
+	uint8_t pl[6];
+	int32_t index = 0;
+	pl[index++] = COMM_GET_VALUES;
+	send_buffer_nrf(pl, index);
+
+	// index = 0;
+	// pl[index++] = MOTE_PACKET_PROCESS_SHORT_BUFFER;
+	// pl[index++] = COMM_GET_VALUES;
+
+	// rfhelp_power_up();
+	// HAL_Delay(2);
+	// rf_tx_wrapper((char*)pl, index);
+
+
+	HAL_Delay(12);
+
+
+rx_thread();
 
 
 
@@ -395,16 +327,17 @@ bldc_interface_process_packet(rx_buffer, rxbuf_len);
 
 char hall_value_conv_buffer[30] = { 0 };
 itoa(SS495_ADC_buffer * 100 / 4096, hall_value_conv_buffer, 10); // SS495_ADC_buffer[512] * 100 / 4096 при 12 битах всего 4096 вариантов %
+
 if(strlen(hall_value_conv_buffer) < 4) {
 	strcat(hall_value_conv_buffer, " ");
 }
+
 SEGGER_RTT_printf(0, "%sadc values%s\n", RTT_CTRL_TEXT_BRIGHT_RED, RTT_CTRL_RESET);
 SEGGER_RTT_printf(0, "%s\n", SS495_ADC_buffer);
 
 SSD1306_GotoXY(20, 45); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
 SSD1306_Puts(hall_value_conv_buffer, &font_terminus_x20b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
 SSD1306_UpdateScreen();	
-
 
 
 }//end-of-while(1)
