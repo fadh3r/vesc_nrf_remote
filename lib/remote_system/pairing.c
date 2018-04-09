@@ -2,6 +2,8 @@
 #include "crc.h"
 #include "rfhelp.h"
 #include "rf.h"
+#include "mote_process_data.h"
+
 #include "refactoring.h"
 
 /**

@@ -24,16 +24,6 @@
  * 3.22
  *
  */
-#include "ssd1306.h"
-#include "SEGGER_RTT.h"
-
-
-
-
-
-
-
-
 
 #include "bldc_interface.h"
 #include "buffer.h"
@@ -44,7 +34,7 @@
 static unsigned char send_buffer[128];
 
 // Private variables for received data
-static mc_values values;
+mc_values values;
 // static mc_values values;
 // static int fw_major;
 // static int fw_minor;
@@ -118,6 +108,7 @@ void bldc_interface_send_packet(unsigned char *data, unsigned int len) {
  * The length of the buffer.
  */
 void bldc_interface_process_packet(unsigned char *data, unsigned int len) {
+    
 	if (!len) {
 		return;
 	}
@@ -168,27 +159,6 @@ void bldc_interface_process_packet(unsigned char *data, unsigned int len) {
 		values.tachometer = buffer_get_int32(data, &ind);
 		values.tachometer_abs = buffer_get_int32(data, &ind);
 		values.fault_code = (mc_fault_code)data[ind++];
-
-		char conv_buffer[10];
-		values.v_in -= .2; //погрешность
-		gcvt(values.v_in, 4, conv_buffer);
-		if(strlen(conv_buffer) == 2) {
-			strcat(conv_buffer, ".0");
-		}
-		
-
-		SSD1306_GotoXY(20, 20); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
-		SSD1306_Puts(conv_buffer, &font_terminus_x32b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
-		//4 символа * на ширину 16 = 64, 64 + 20 = 84
-		//
-		//высота начала 20 + 32 высота предыдущего шрифта = 52 низ предыдущего шрифта
-		//52 - высота текущего шрифта 18 = 34
-		//
-		SSD1306_GotoXY(84, 31); //Устанавливаем курсор в позицию 0;44. Сначала по горизонтали, потом вертикали.
-		SSD1306_Puts("v", &font_terminus_x18b, SSD1306_COLOR_WHITE); //пишем надпись в выставленной позиции шрифтом "Font_7x10" белым цветом. 
-		// SSD1306_UpdateScreen();	
-
-		SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_RED"VOLTAGE: %s\n"RTT_CTRL_RESET, conv_buffer);
 
 		if (rx_value_func) {
 			rx_value_func(&values);

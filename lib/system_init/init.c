@@ -1,4 +1,9 @@
 #include "stm32f1xx_hal.h"
+#include "bldc_interface.h"
+#include "bldc_interface_uart.h"
+#include "refactoring.h"
+#include "mote_process_data.h"
+#include "mote_send_command.h"
 
 void stm32_peripherals_init() {
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -18,8 +23,10 @@ void mote_init() {
     SSD1306_Init();
     HAL_Delay(100);
 
-    // Packet interface
-    // packet_init(send_packet, send_buffer_nrf, 0);
+    // Initialize the bldc interface and provide send function
+    bldc_interface_uart_init(send_buffer_nrf);
+    // Set callback function for handling received data
+    bldc_interface_set_rx_value_func(callback_process_received_data);
 
     // NRF
     rf_init();

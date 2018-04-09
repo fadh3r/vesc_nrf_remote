@@ -1,5 +1,6 @@
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
+#include "mote_process_data.h"
 #include "refactoring.h"
 #include "rf.h"
 #include "gpio.h"

@@ -28,7 +28,7 @@
 #include "stm32f1xx_it.h"
 #include "init.h"
 
-
+#include "bldc_interface_uart.h"
 #include "datatypes.h"
 #include "bldc_interface.h"
 #include "conf_general.h"
@@ -49,20 +49,6 @@
 
 
 
-// Functions
-
-
-static void send_packet(unsigned char *data, unsigned int len) {
-	// Wait for the previous transmission to finish.
-	// while (UARTD1.txstate == UART_TX_ACTIVE) {
-	// 	chThdSleep(1);
-	// }
-
-	// uartStartSend(&UARTD1, len, data);
-}
-
-
-
 UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 static void MX_USART1_UART_Init(void);
@@ -75,18 +61,10 @@ volatile uint32_t SS495_ADC_buffer = 0;;  //сделать 16битной
 
 
 
-
-
-
-
-
-
-
 int main(void) {
     stm32_peripherals_init();
     mote_init();
     // show_startup_logo();
-
 
     // uint8_t receiveBuffer[16] = { 0 };
     // HAL_UART_Receive(&huart1, receiveBuffer, 16, 1024);
@@ -95,23 +73,35 @@ int main(void) {
     // SEGGER_RTT_WriteString(0, "\n");
     // SEGGER_RTT_printf(0, "%d\r\n", i);
 
+
+
+
+
+
     while (1) {
 
-        //get hall value and send it to vesc
+        
 
-        send_command_to_vesc(COMM_GET_VALUES);
-        
-        //WAIT FOR ANSWER
+
+        // send_command_to_vesc(COMM_GET_VALUES);
+        bldc_interface_get_values();
+        //delay to give some time vesc to answer
         HAL_Delay(12);
-        
-        process_received_vesc_data();
+        mote_process_data();
+       
+
+
+
+        // get hall value
+        // send hall values to vesc
 
         print_rf_stats();
         print_rf_status();
 
 
         char hall_value_conv_buffer[30] = { 0 };
-        itoa(SS495_ADC_buffer * 100 / 4096, hall_value_conv_buffer, 10); // SS495_ADC_buffer[512] * 100 / 4096 при 12 битах всего 4096 вариантов %
+        itoa(SS495_ADC_buffer * 255 / 4096, hall_value_conv_buffer, 10); // SS495_ADC_buffer[512] * 100 / 4096 при 12 битах всего 4096 вариантов %
+        //js_y = UINT8_T data->js_x = 255 - data->js_x;
 
         if(strlen(hall_value_conv_buffer) < 4) {
             strcat(hall_value_conv_buffer, " ");

@@ -20,6 +20,8 @@
 
 #include "datatypes.h"
 
+
+extern mc_values values;
 // interface functions
 void bldc_interface_init(void(*func)(unsigned char *data, unsigned int len));
 void bldc_interface_set_forward_can(int32_t vesc_id);

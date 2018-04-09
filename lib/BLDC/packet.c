@@ -49,14 +49,14 @@ void packet_send_packet(unsigned char *data, unsigned int len, int handler_num) 
 
 	int b_ind = 0;
 
-	if (len <= 256) {
-		handler_states[handler_num].tx_buffer[b_ind++] = 2;
-		handler_states[handler_num].tx_buffer[b_ind++] = len;
-	} else {
-		handler_states[handler_num].tx_buffer[b_ind++] = 3;
-		handler_states[handler_num].tx_buffer[b_ind++] = len >> 8;
-		handler_states[handler_num].tx_buffer[b_ind++] = len & 0xFF;
-	}
+	// if (len <= 256) {
+	// 	handler_states[handler_num].tx_buffer[b_ind++] = 2;
+	// 	handler_states[handler_num].tx_buffer[b_ind++] = len;
+	// } else {
+	// 	handler_states[handler_num].tx_buffer[b_ind++] = 3;
+	// 	handler_states[handler_num].tx_buffer[b_ind++] = len >> 8;
+	// 	handler_states[handler_num].tx_buffer[b_ind++] = len & 0xFF;
+	// }
 
 	memcpy(handler_states[handler_num].tx_buffer + b_ind, data, len);
 	b_ind += len;
