@@ -1,6 +1,7 @@
 
 
 #include "stdint.h"
+#include "datatypes.h"
 
 #define NRF_RESTART_TIMEOUT		500  // Restart the NRF if nothing has been received or acked for this time
 
@@ -28,3 +29,5 @@ extern int nrf_restart_rx_time;
 extern int nrf_restart_tx_time;
 
 int rf_tx_wrapper(char *data, int len);
+void send_command_to_vesc(COMM_PACKET_ID command);
+void process_received_vesc_data(void);

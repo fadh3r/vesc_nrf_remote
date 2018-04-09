@@ -3,6 +3,8 @@
 #include "refactoring.h"
 #include "rf.h"
 #include "gpio.h"
+#include "ss495a.h"
+
 
 
 void print_rf_stats() {
@@ -22,7 +24,7 @@ void print_rf_stats() {
 void print_rf_status(void) {
     int s = rf_status();
 
-    SEGGER_RTT_printf(0, "%s", "\nRF Status Register\r\n");
+    SEGGER_RTT_printf(0, "%s", "\nRF Status Registers\r\n");
     SEGGER_RTT_printf(0, "%s", "RX_DR  TX_DS  MAX_RT  RX_P_NO  TX_FULL\r\n");
     SEGGER_RTT_printf(0, "%d         ", NRF_STATUS_GET_RX_DR(s));
     SEGGER_RTT_printf(0, "%d        ", NRF_STATUS_GET_TX_DS(s));

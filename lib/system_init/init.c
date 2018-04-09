@@ -13,10 +13,29 @@ void stm32_peripherals_init() {
 	//   MX_SPI1_Init();
 }
 
-void remote_peripherals_init() {
-	ss495a_init();
-	SSD1306_Init();
-	HAL_Delay(1000);
+void mote_init() {
+    ss495a_init();
+    SSD1306_Init();
+    HAL_Delay(100);
+
+    // Packet interface
+    // packet_init(send_packet, send_buffer_nrf, 0);
+
+    // NRF
+    rf_init();
+    rfhelp_init();
+    // print_rf_status();
+
+    // Restart radio
+    HAL_Delay(5);
+    rfhelp_power_up();
+    HAL_Delay(1);
+    rfhelp_restart();
+
+    rf_pair_and_set();
+
+
+
 }
 
 void SystemClock_Config(void) {
